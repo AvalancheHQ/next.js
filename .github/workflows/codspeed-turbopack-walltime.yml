@@ -56,7 +56,7 @@ jobs:
       - name: Restore Rust build cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          shared-key: codspeed-turbopack-walltime
+          shared-key: codspeed-turbopack-walltime-v2
           key: ${{ runner.arch }}
           cache-on-failure: true
 
