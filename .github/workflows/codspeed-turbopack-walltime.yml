@@ -7,14 +7,6 @@ on:
         description: 'Number of identical benchmark jobs to launch'
         required: true
         default: '1'
-      runner:
-        description: 'Runner pool used for the variance sample'
-        required: true
-        type: choice
-        options:
-          - gen2
-          - github-hosted
-        default: gen2
   push:
     branches:
       - codspeed/turbopack-walltime-variance
@@ -31,14 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ids: ${{ steps.generate.outputs.ids }}
-      label: ${{ steps.generate.outputs.label }}
-      runner: ${{ steps.generate.outputs.runner }}
     steps:
       - name: Generate benchmark matrix
         id: generate
         env:
           REQUESTED_RUNS: ${{ inputs.runs || '1' }}
-          REQUESTED_RUNNER: ${{ inputs.runner || 'gen2' }}
         run: |
           if ! [[ "$REQUESTED_RUNS" =~ ^[1-9][0-9]*$ ]] || (( REQUESTED_RUNS > 256 )); then
             echo "::error::runs must be an integer between 1 and 256"
@@ -48,29 +37,14 @@ jobs:
           ids="$(seq -s, 1 "$REQUESTED_RUNS")"
           echo "ids=[$ids]" >> "$GITHUB_OUTPUT"
 
-          case "$REQUESTED_RUNNER" in
-            gen2)
-              echo "label=Gen 2" >> "$GITHUB_OUTPUT"
-              echo "runner=codspeed-macro-x86-ryzen-9950x-ubuntu-24-04" >> "$GITHUB_OUTPUT"
-              ;;
-            github-hosted)
-              echo "label=GitHub hosted" >> "$GITHUB_OUTPUT"
-              echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "::error::unknown runner: $REQUESTED_RUNNER"
-              exit 1
-              ;;
-          esac
-
   bench:
     needs: matrix
     strategy:
       fail-fast: false
       matrix:
         id: ${{ fromJson(needs.matrix.outputs.ids) }}
-    name: '${{ needs.matrix.outputs.label }} small_apps walltime #${{ matrix.id }}'
-    runs-on: ${{ needs.matrix.outputs.runner }}
+    name: 'Gen 2 small_apps walltime #${{ matrix.id }}'
+    runs-on: codspeed-macro-x86-ryzen-9950x-ubuntu-24-04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
