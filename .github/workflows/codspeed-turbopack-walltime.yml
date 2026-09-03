@@ -1,0 +1,104 @@
+name: CodSpeed Turbopack walltime (variance demo)
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Number of identical benchmark jobs to launch'
+        required: true
+        default: '1'
+      runner:
+        description: 'Runner pool used for the variance sample'
+        required: true
+        type: choice
+        options:
+          - gen2
+          - github-hosted
+        default: gen2
+  push:
+    branches:
+      - codspeed/turbopack-walltime-variance
+
+permissions:
+  contents: read
+
+env:
+  CI: 1
+  RUST_LOG: 'off'
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      ids: ${{ steps.generate.outputs.ids }}
+      label: ${{ steps.generate.outputs.label }}
+      runner: ${{ steps.generate.outputs.runner }}
+    steps:
+      - name: Generate benchmark matrix
+        id: generate
+        env:
+          REQUESTED_RUNS: ${{ inputs.runs || '1' }}
+          REQUESTED_RUNNER: ${{ inputs.runner || 'gen2' }}
+        run: |
+          if ! [[ "$REQUESTED_RUNS" =~ ^[1-9][0-9]*$ ]] || (( REQUESTED_RUNS > 256 )); then
+            echo "::error::runs must be an integer between 1 and 256"
+            exit 1
+          fi
+
+          ids="$(seq -s, 1 "$REQUESTED_RUNS")"
+          echo "ids=[$ids]" >> "$GITHUB_OUTPUT"
+
+          case "$REQUESTED_RUNNER" in
+            gen2)
+              echo "label=Gen 2" >> "$GITHUB_OUTPUT"
+              echo "runner=codspeed-macro-x86-ryzen-9950x-ubuntu-24-04" >> "$GITHUB_OUTPUT"
+              ;;
+            github-hosted)
+              echo "label=GitHub hosted" >> "$GITHUB_OUTPUT"
+              echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::unknown runner: $REQUESTED_RUNNER"
+              exit 1
+              ;;
+          esac
+
+  bench:
+    needs: matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ${{ fromJson(needs.matrix.outputs.ids) }}
+    name: '${{ needs.matrix.outputs.label }} small_apps walltime #${{ matrix.id }}'
+    runs-on: ${{ needs.matrix.outputs.runner }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust toolchain
+        uses: ./.github/actions/setup-rust
+
+      - name: Install cargo-codspeed
+        run: |
+          if ! cargo binstall --locked --no-confirm cargo-codspeed@3.0.5; then
+            cargo install cargo-codspeed --locked --version 3.0.5
+          fi
+
+      - name: Install benchmark apps
+        working-directory: turbopack/benchmark-apps
+        run: |
+          npm i -g corepack@0.31
+          corepack enable
+          pnpm install --loglevel error
+
+      - name: Build benches (walltime)
+        env:
+          CODSPEED_RUNNER_MODE: walltime
+        run: cargo codspeed build -p turbopack-cli small_apps
+
+      - name: Run benches
+        uses: CodSpeedHQ/action@1c8ae4843586d3ba879736b7f6b7b0c990757fab # v4.12.1
+        with:
+          mode: walltime
+          run: cargo codspeed run -p turbopack-cli small_apps
