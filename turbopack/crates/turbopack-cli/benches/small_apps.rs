@@ -3,7 +3,10 @@
 #[global_allocator]
 static ALLOC: turbo_tasks_malloc::TurboMalloc = turbo_tasks_malloc::TurboMalloc;
 
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use turbopack_cli::arguments::{BuildArguments, CommonArguments};
@@ -95,7 +98,9 @@ fn bench_small_apps(c: &mut Criterion) {
 
 criterion_group!(
   name = benches;
-  config = Criterion::default().sample_size(10);
+  config = Criterion::default()
+      .sample_size(10)
+      .measurement_time(Duration::from_secs(20));
   targets = bench_small_apps
 );
 criterion_main!(benches);
