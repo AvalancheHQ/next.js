@@ -54,13 +54,14 @@ jobs:
         uses: ./.github/actions/setup-rust
 
       - name: Restore Rust build cache
+        id: rust-cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          shared-key: codspeed-turbopack-walltime-v2
-          key: ${{ runner.arch }}
-          cache-on-failure: true
+          shared-key: codspeed-turbopack-walltime-${{ github.sha }}
+          cache-workspace-crates: true
 
       - name: Install cargo-codspeed
+        if: steps.rust-cache.outputs.cache-hit != 'true'
         run: |
           if ! cargo binstall --locked --no-confirm cargo-codspeed@3.0.5; then
             cargo install cargo-codspeed --locked --version 3.0.5
