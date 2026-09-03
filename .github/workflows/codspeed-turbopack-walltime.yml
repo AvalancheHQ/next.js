@@ -41,6 +41,7 @@ jobs:
     needs: matrix
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         id: ${{ fromJson(needs.matrix.outputs.ids) }}
     name: 'Gen 2 small_apps walltime #${{ matrix.id }}'
