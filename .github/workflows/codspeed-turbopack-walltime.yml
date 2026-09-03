@@ -53,6 +53,12 @@ jobs:
       - name: Setup Rust toolchain
         uses: ./.github/actions/setup-rust
 
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: codspeed-turbopack-walltime
+          key: ${{ runner.arch }}
+
       - name: Install cargo-codspeed
         run: |
           if ! cargo binstall --locked --no-confirm cargo-codspeed@3.0.5; then
