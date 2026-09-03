@@ -6,6 +6,7 @@ on:
     # Don't run when graphite base branches are pushed
     branches-ignore:
       - 'graphite-base/**'
+      - 'codspeed/turbopack-walltime-variance'
     # Run on release tags so publishing is driven by the tag push rather than
     # the release-commit branch push (see the deploy-target step).
     tags:

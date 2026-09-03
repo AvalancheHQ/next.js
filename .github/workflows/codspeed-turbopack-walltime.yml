@@ -58,11 +58,12 @@ jobs:
         with:
           shared-key: codspeed-turbopack-walltime
           key: ${{ runner.arch }}
+          cache-on-failure: true
 
       - name: Install cargo-codspeed
         run: |
-          if ! cargo binstall --locked --no-confirm cargo-codspeed@3.0.5; then
-            cargo install cargo-codspeed --locked --version 3.0.5
+          if ! cargo binstall --locked --no-confirm cargo-codspeed@4.3.0; then
+            cargo install cargo-codspeed --locked --version 4.3.0
           fi
 
       - name: Install benchmark apps
@@ -75,10 +76,10 @@ jobs:
       - name: Build benches (walltime)
         env:
           CODSPEED_RUNNER_MODE: walltime
-        run: cargo codspeed build -p turbopack-cli small_apps
+        run: cargo codspeed build -p turbopack-cli small_apps -m walltime
 
       - name: Run benches
-        uses: CodSpeedHQ/action@1c8ae4843586d3ba879736b7f6b7b0c990757fab # v4.12.1
+        uses: CodSpeedHQ/action@373d6868929f444bc08d901fd0eb0ad52a8875ea # v5.2.1
         with:
           mode: walltime
-          run: cargo codspeed run -p turbopack-cli small_apps
+          run: cargo codspeed run -p turbopack-cli small_apps -m walltime
