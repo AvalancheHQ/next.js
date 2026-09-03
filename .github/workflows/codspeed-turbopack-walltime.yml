@@ -76,10 +76,10 @@ jobs:
       - name: Build benches (walltime)
         env:
           CODSPEED_RUNNER_MODE: walltime
-        run: cargo codspeed build -p turbopack-cli small_apps -m walltime
+        run: cargo codspeed -m walltime build -p turbopack-cli --bench small_apps
 
       - name: Run benches
         uses: CodSpeedHQ/action@373d6868929f444bc08d901fd0eb0ad52a8875ea # v5.2.1
         with:
           mode: walltime
-          run: cargo codspeed run -p turbopack-cli small_apps -m walltime
+          run: cargo codspeed -m walltime run -p turbopack-cli --bench small_apps
